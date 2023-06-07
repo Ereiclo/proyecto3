@@ -38,9 +38,30 @@ class Red{
 
     }
 
-    arma::Row<double> activation(arma::Row<double>data){
+    arma::Row<double> activationSigmoid(arma::Row<double>data){
 
         return 1/(1 + exp(-data));
+    }
+
+    arma::Row<double> activationRelu(arma::Row<double> data){
+        arma::Row<double> zeros(arma::size(data));
+
+        return arma::max(data,zeros);
+    }
+
+    arma::Row<double> activation(arma::Row<double> data){
+
+        return activationRelu(data);
+
+    }
+
+
+    double Error(arma::Row<double>& X,  arma::Row<double> &Y) {
+        return arma::sum(arma::square(pred(X) - Y)/2);
+    }
+
+    void backpropagate(arma::Row<double>& X, arma::Row<double> &Y){
+
     }
 
 
@@ -71,17 +92,28 @@ int main(int argc, char** argv){
 
     Red rn(1,capas,1);
 
-    rn.print_red();
+    // rn.print_red();
 
 
-    arma::Row<double> input(1);
-
-    input(0) = 2;
-
-    cout<<input;
+    // arma::Row<double> input(1);
+    arma::Row<double> test({2,3,-1,-235,-3,-5});
 
 
-    cout<< rn.pred(input);
+    cout<<rn.activationRelu(test);
+
+
+    // auto s = arma::size(nada);
+
+
+
+
+
+    // input(0) = 2;
+
+    // cout<<input;
+
+
+    // cout<< rn.pred(input);
 
 
 
