@@ -1,5 +1,7 @@
 #include <iostream>
 #include <armadillo>
+#include <deque>
+#include <vector>
 
 using namespace std;
 
@@ -9,10 +11,11 @@ using namespace std;
 class Red{
 
     vector<arma::Mat<double>> capas;
+    double alpha = 0.15;
 
     public:
 
-    Red(int input_n, vector<int>&capas,int output_n){
+    Red(int input_n, vector<int>&capas,int output_n,double alpha): alpha{alpha}{
 
         // this->capas[0](3,3);
         this->capas.push_back(arma::Mat<double>(input_n,capas[0],arma::fill::randu));
@@ -51,7 +54,7 @@ class Red{
 
     arma::Row<double> activation(arma::Row<double> data){
 
-        return activationRelu(data);
+        return activationSigmoid(data);
 
     }
 
@@ -61,6 +64,49 @@ class Red{
     }
 
     void backpropagate(arma::Row<double>& X, arma::Row<double> &Y){
+
+        arma::Row<double> actual = X;
+        vector<arma::Row<double>> sj_by_layers;
+
+
+        for(int i = 0; i < capas.size();++i){
+            actual = activation(actual*this->capas[i]);
+            sj_by_layers.push_back(actual);
+        }
+
+
+        deque<arma::Mat<double>> derivates;
+
+        for(int current_layer = sj_by_layers.size()-1;;--current_layer){
+            arma::Row<double> sj = sj_by_layers[current_layer];
+            arma::Row<double> ro;
+            arma::Row<double> net_wj = current_layer == 0 ? X : sj_by_layers[current_layer-1];
+
+
+
+            if(current_layer == sj_by_layers.size()-1){
+                //(dL/dsj)*(dsj/dNet) = dL/dNet
+
+                arma::Row<double> dsj_Netj = (sj)%(1 - sj);
+                ro = (sj - Y)% dsj_Netj;
+                                    //(dNet/dwj)*(dL/dNet)
+                derivates.push_front(net_wj.t()*ro);
+            }
+            else{
+                arma::Mat<double> net_next_h_sj = capas[current_layer+1];
+                        //dL/sj*(dj/dNetj)    
+                arma::Row<double> dsj_Netj = (sj)%(1 - sj);
+                ro = (net_next_h_sj*(ro.t())*(dsj_Netj.t())).t();
+
+                derivates.push_front(net_wj.t()*ro);
+
+            }
+
+        }
+
+        for(int i = 0; i < capas.size();++i){
+            capas[i] = capas[i] - alpha*derivates[i];
+        }
 
     }
 
@@ -96,11 +142,13 @@ int main(int argc, char** argv){
 
 
     // arma::Row<double> input(1);
-    arma::Row<double> test({2,3,-1,-235,-3,-5});
+    arma::Col<double> test({2,3,4,5});
+    arma::Col<double> test2({3,7,13,6});
 
 
-    cout<<rn.activationRelu(test);
+    // cout<<rn.activationRelu(test);
 
+    cout<<  test % test2;
 
     // auto s = arma::size(nada);
 
