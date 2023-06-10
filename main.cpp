@@ -11,33 +11,34 @@ using namespace std;
 
 class Red{
 
-    vector<arma::Mat<double>> capas;
+    vector<arma::Mat<double>> w;
+    vector<arma::Row<double>> bias;
     // vector<arma::Mat<double>> f;
     double alpha = 0.15;
 
     public:
 
-    Red(int input_n, vector<int>&capas,int output_n,double alpha): alpha{alpha}{
+    Red(int input_n, vector<int>&n_por_capas,int output_n,double alpha): alpha{alpha}{
 
         // this->capas[0](3,3);
-        this->capas.push_back(arma::Mat<double>(input_n,capas[0],arma::fill::randu));
+        w.push_back(arma::Mat<double>(input_n,n_por_capas[0],arma::fill::randu));
 
 
-        for(int i = 1; i < capas.size();++i){
-            int n = capas[i-1];
-            int m = capas[i];
-            this->capas.push_back(arma::Mat<double>(n,m,arma::fill::randu));
+        for(int i = 1; i < n_por_capas.size();++i){
+            int n = n_por_capas[i-1];
+            int m = n_por_capas[i];
+            w.push_back(arma::Mat<double>(n,m,arma::fill::randu));
         }   
 
-        this->capas.push_back(arma::Mat<double>(capas.back(),output_n,arma::fill::randu));
+        w.push_back(arma::Mat<double>(n_por_capas.back(),output_n,arma::fill::randu));
 
     }
 
     void print_red(){
 
 
-        for(auto& m: this->capas){
-            cout<<m<<endl;
+        for(auto& m_capa_actual: w){
+            cout<<m_capa_actual<<endl;
         }
 
 
@@ -71,8 +72,8 @@ class Red{
         vector<arma::Row<double>> sj_by_layers;
 
 
-        for(int i = 0; i < capas.size();++i){
-            actual = activation(actual*this->capas[i]);
+        for(int i = 0; i < w.size();++i){
+            actual = activation(actual*w[i]);
             sj_by_layers.push_back(actual);
         }
 
@@ -104,7 +105,7 @@ class Red{
                 // cout<<size(derivates.front())<<endl;
             }
             else{
-                arma::Mat<double> net_next_h_sj = capas[current_layer+1];
+                arma::Mat<double> net_next_h_sj = w[current_layer+1];
                         //dL/sj*(dj/dNetj)    
                 // cout<<"dNet(h+1)/dsj: "<<size(net_next_h_sj)<<endl;
                 // cout<<"ro(h+1) = (dL/dNet(H+1)): "<< size(ro.t())<<endl;
@@ -123,8 +124,8 @@ class Red{
 
         }
 
-        for(int i = 0; i < capas.size();++i){
-            capas[i] = capas[i] - alpha*derivates[i];
+        for(int i = 0; i < w.size();++i){
+            w[i] = w[i] - alpha*derivates[i];
             // biases[i] = biases[i] - alpha*ro[i];
         }
 
@@ -165,8 +166,8 @@ class Red{
         arma::Row<double> actual = X;
 
 
-        for(int i = 0; i < capas.size();++i){
-            actual = activation(actual*this->capas[i]);
+        for(int i = 0; i < w.size();++i){
+            actual = activation(actual*w[i]);
 
         }
 
