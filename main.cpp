@@ -22,23 +22,30 @@ class Red{
 
         // this->capas[0](3,3);
         w.push_back(arma::Mat<double>(input_n,n_por_capas[0],arma::fill::randu));
+        bias.push_back(arma::Row<double>(n_por_capas[0],arma::fill::zeros));
 
 
         for(int i = 1; i < n_por_capas.size();++i){
             int n = n_por_capas[i-1];
             int m = n_por_capas[i];
             w.push_back(arma::Mat<double>(n,m,arma::fill::randu));
+            bias.push_back(arma::Row<double>(m,arma::fill::zeros));
         }   
 
         w.push_back(arma::Mat<double>(n_por_capas.back(),output_n,arma::fill::randu));
+        bias.push_back(arma::Row<double>(output_n,arma::fill::zeros));
 
     }
 
     void print_red(){
 
 
-        for(auto& m_capa_actual: w){
+        for(int i = 0; i < w.size();++i){
+            auto m_capa_actual = w[i];
+            auto bias_actual = bias[i];
+
             cout<<m_capa_actual<<endl;
+            cout<<bias_actual;
         }
 
 
@@ -73,7 +80,7 @@ class Red{
 
 
         for(int i = 0; i < w.size();++i){
-            actual = activation(actual*w[i]);
+            actual = activation(actual*w[i] + bias[i]);
             sj_by_layers.push_back(actual);
         }
 
@@ -81,7 +88,8 @@ class Red{
         // cout<<sj_by_layers.back()<<endl;
 
 
-        deque<arma::Mat<double>> derivates;
+        deque<arma::Mat<double>> w_derivates;
+        deque<arma::Row<double>> bias_derivates;
         arma::Row<double> ro;
 
         for(int current_layer = sj_by_layers.size()-1; current_layer >= 0   ;--current_layer){
@@ -101,8 +109,9 @@ class Red{
                 ro = (sj - Y)% dsj_Netj;
                 // cout<<"ro: "<<size(ro)<<endl;
                                     //(dNet/dwj)*(dL/dNet)
-                derivates.push_front(net_wj.t()*ro);
-                // cout<<size(derivates.front())<<endl;
+                w_derivates.push_front(net_wj.t()*ro);
+                bias_derivates.push_front(ro);
+                // cout<<size(w_derivates.front())<<endl;
             }
             else{
                 arma::Mat<double> net_next_h_sj = w[current_layer+1];
@@ -114,8 +123,9 @@ class Red{
                 ro = ( (net_next_h_sj*(ro.t())).t() % (dsj_Netj));
                 // cout<<"ro: "<<size(ro)<<endl;
 
-                derivates.push_front(net_wj.t()*ro);
-                // cout<<size(derivates.front())<<endl;
+                w_derivates.push_front(net_wj.t()*ro);
+                bias_derivates.push_front(ro);
+                // cout<<size(w_derivates.front())<<endl;
 
             }
 
@@ -125,8 +135,8 @@ class Red{
         }
 
         for(int i = 0; i < w.size();++i){
-            w[i] = w[i] - alpha*derivates[i];
-            // biases[i] = biases[i] - alpha*ro[i];
+            w[i] = w[i] - alpha*w_derivates[i];
+            bias[i] = bias[i] - alpha*bias_derivates[i];
         }
 
     }
@@ -167,7 +177,7 @@ class Red{
 
 
         for(int i = 0; i < w.size();++i){
-            actual = activation(actual*w[i]);
+            actual = activation(actual*w[i] + bias[i]);
 
         }
 
@@ -234,7 +244,8 @@ arma::Mat<double> read_data(string name){
 
 
 int main(int argc, char** argv){
-    // arma::arma_rng::set_seed_random();
+    arma::arma_rng::set_seed(0);
+
     vector<int> capas = {5,2};
 
     Red rn(4,capas,3,0.1);
@@ -263,17 +274,18 @@ int main(int argc, char** argv){
     cout<<arma::size(X)<<endl;
     cout<<arma::size(Y)<<endl;
 
+    // rn.print_red();
 
     rn.train(X,Y,5000);
 
 
 
-    cout<<endl;
-    for(int i= 0; i < size(X).n_rows;++i){
-        arma::Row<double> r = X.row(i);
-        arma::Row<double> r_real = Y.row(i);
-        cout<<rn.pred(r)<<" "<<r_real<<endl;
-    }
+    // cout<<endl;
+    // for(int i= 0; i < size(X).n_rows;++i){
+    //     arma::Row<double> r = X.row(i);
+    //     arma::Row<double> r_real = Y.row(i);
+    //     cout<<rn.pred(r)<<" "<<r_real<<endl;
+    // }
 
     // auto row2 = arma::conv_to<arma::rowvec>::from(v1);
     // auto row3 = arma::conv_to<arma::rowvec>::from(v2);
