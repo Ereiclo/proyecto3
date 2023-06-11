@@ -74,12 +74,44 @@ public:
         return activation_function{f, df};
     }
 
-    arma::Row<double> activationRelu(arma::Row<double> data)
+    static activation_function tanh()
     {
-        arma::Row<double> zeros(arma::size(data));
+        auto f = [](arma::Row<double> X) -> arma::Row<double>
+        {
+            return 2/(1 + exp(-2*X)) - 1;
+        };
+        auto df = [](arma::Row<double> Y, arma::Row<double> X) -> arma::Row<double>
+        {
 
-        return arma::max(data, zeros);
+            return 1 - arma::square(Y);
+        };
+
+        return activation_function{f, df};
     }
+
+    static activation_function relu()
+    {
+        auto f = [](arma::Row<double> X) -> arma::Row<double>
+        {
+            return arma::max(X,arma::Row<double>(size(X),arma::fill::zeros));
+        };
+        auto df = [](arma::Row<double> Y, arma::Row<double> X) -> arma::Row<double>
+        {
+            arma::Row<arma::uword> result =  (X >= arma::Row<double>(size(X),arma::fill::zeros));
+
+            // cout<<(test >= arma::Row<double>(size(test),arma::fill::zeros) );
+            // cout<<result;
+            
+            return arma::conv_to<arma::Row<double>>::from(result);
+            // return {};
+        };
+        // activation_function sigmoid
+
+        return activation_function{f, df};
+    }
+
+    
+
 
     // arma::Row<double> activation(arma::Row<double> data){
 
@@ -264,7 +296,7 @@ int main(int argc, char **argv)
     arma::arma_rng::set_seed(0);
 
     vector<int> capas = {5, 2};
-    vector<activation_function> activation = {Red::sigmoid(), Red::sigmoid()};
+    vector<activation_function> activation = {Red::tanh(), Red::tanh()};
 
     Red rn(4, capas,activation ,Red::sigmoid(), 3, 0.1);
 
@@ -287,12 +319,18 @@ int main(int argc, char **argv)
     auto Y = (read_data("./datasets/iris_pred.csv"));
     // arma::Row<double> Y = (read_data("./datasets/iris_pred.csv")).t();
 
-    cout << arma::size(X) << endl;
-    cout << arma::size(Y) << endl;
+    // cout << arma::size(X) << endl;
+    // cout << arma::size(Y) << endl;
 
     // rn.print_red();
 
     rn.train(X, Y, 5000);
+
+    // arma::Row<double> test = {1,1,1,12,31,-12315512,154,-1251351551,0,-12315,-015315};
+
+    // cout<<(test >= arma::Row<double>(size(test),arma::fill::zeros) );
+    // cout<<(Red::relu()).f(test);
+    // cout<<(Red::relu()).df(arma::Row<double>{},test);
 
     // cout<<endl;
     // for (int i = 0; i < size(X).n_rows; ++i)
