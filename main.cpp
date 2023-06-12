@@ -296,7 +296,7 @@ int main(int argc, char **argv)
     arma::arma_rng::set_seed(0);
 
     vector<int> capas = {5, 2};
-    vector<activation_function> activation = {Red::tanh(), Red::tanh()};
+    vector<activation_function> activation = {Red::sigmoid(), Red::sigmoid()};
 
     Red rn(4, capas,activation ,Red::sigmoid(), 3, 0.1);
 
