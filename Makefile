@@ -1,6 +1,6 @@
 
-build:
-	g++ main.cpp -o exe -std=c++11 -larmadillo -g
+library_development:
+	g++ library_development.cpp -o exe -std=c++11 -larmadillo -g
 
-run: build
+run: library_development
 	./exe

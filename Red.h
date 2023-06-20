@@ -11,6 +11,15 @@ struct activation_function
 {
     function<arma::Row<double>(arma::Row<double>)> f;
     function<arma::Row<double>(arma::Row<double>, arma::Row<double>)> df;
+    string name;
+};
+
+struct loss_function
+{
+
+    function<double(arma::Row<double>, arma::Row<double>)> loss;
+    function<arma::Row<double>(arma::Row<double>, arma::Row<double>)> dloss;
+    string name;
 };
 
 class Red
@@ -19,14 +28,18 @@ class Red
     vector<arma::Mat<double>> w;
     vector<arma::Row<double>> bias;
     vector<activation_function> activation;
+    loss_function floss;
     // vector<arma::Mat<double>> f;
     double alpha = 0.15;
 
 public:
-    Red(int input_n, vector<int> &n_por_capas, vector<activation_function> activation,
-        activation_function activation_final, int output_n,
-        double alpha = 0.15) : activation{activation}, alpha{alpha}
+    Red(int input_n, vector<int> &n_por_capas, int output_n, vector<activation_function> activation,
+        activation_function activation_final, loss_function loss,
+        double alpha = 0.15) : activation{activation}, floss{loss}, alpha{alpha}
     {
+
+        // if(activation_final.name == "soft_max" && loss.name != "cross_entropy")
+        // throw std::invalid_argument("Soft max solo se puede usar con cross entropy");
 
         this->activation.push_back(activation_final);
         // this->capas[0](3,3);
@@ -71,47 +84,92 @@ public:
         };
         // activation_function sigmoid
 
-        return activation_function{f, df};
+        return activation_function{f, df, "sigmoid"};
     }
 
     static activation_function tanh()
     {
         auto f = [](arma::Row<double> X) -> arma::Row<double>
         {
-            return 2/(1 + exp(-2*X)) - 1;
+            return 2 / (1 + exp(-2 * X)) - 1;
         };
         auto df = [](arma::Row<double> Y, arma::Row<double> X) -> arma::Row<double>
         {
-
             return 1 - arma::square(Y);
         };
 
-        return activation_function{f, df};
+        return activation_function{f, df, "tanh"};
     }
 
     static activation_function relu()
     {
         auto f = [](arma::Row<double> X) -> arma::Row<double>
         {
-            return arma::max(X,arma::Row<double>(size(X),arma::fill::zeros));
+            return arma::max(X, arma::Row<double>(size(X), arma::fill::zeros));
         };
         auto df = [](arma::Row<double> Y, arma::Row<double> X) -> arma::Row<double>
         {
-            arma::Row<arma::uword> result =  (X >= arma::Row<double>(size(X),arma::fill::zeros));
+            arma::Row<arma::uword> result = (X >= arma::Row<double>(size(X), arma::fill::zeros));
 
             // cout<<(test >= arma::Row<double>(size(test),arma::fill::zeros) );
             // cout<<result;
-            
+
             return arma::conv_to<arma::Row<double>>::from(result);
             // return {};
         };
         // activation_function sigmoid
 
-        return activation_function{f, df};
+        return activation_function{f, df, "relu"};
     }
 
-    
+    static activation_function soft_max()
+    {
+        auto f = [](arma::Row<double> X) -> arma::Row<double>
+        {
+            return arma::exp(X) / (arma::sum(arma::exp(X)));
+        };
+        auto df = [](arma::Row<double> Y, arma::Row<double> X) -> arma::Row<double>
+        {
+            return Y % (1 - Y);
+        };
+        // activation_function sigmoid
 
+        return activation_function{f, df, "soft_max"};
+    }
+
+    static loss_function mse_loss()
+    {
+
+        auto loss = [](arma::Row<double> Y_pred, arma::Row<double> Y) -> double
+        {
+            return arma::sum(arma::square(Y_pred - Y) / 2);
+        };
+
+        auto dloss = [](arma::Row<double> Y_pred, arma::Row<double> Y) -> arma::Row<double>
+        {
+            return Y_pred - Y;
+        };
+
+        return loss_function{loss, dloss, "mse"};
+    }
+
+    static loss_function cross_entropy_loss()
+    {
+
+        auto loss = [](arma::Row<double> Y_pred, arma::Row<double> Y) -> double
+        {
+            return (-1) * arma::sum(Y % arma::log2(Y_pred));
+        };
+
+        auto dloss = [](arma::Row<double> Y_pred, arma::Row<double> Y) -> arma::Row<double>
+        {
+            double eps = 0.0000000000000001;
+
+            return (-1) * (Y / (Y_pred + eps));
+        };
+
+        return loss_function{loss, dloss, "cross_entropy"};
+    }
 
     // arma::Row<double> activation(arma::Row<double> data){
 
@@ -151,12 +209,11 @@ public:
         deque<arma::Row<double>> bias_derivates;
         arma::Row<double> ro;
 
-
         for (int current_layer = net_by_layers.size() - 1; current_layer >= 0; --current_layer)
         {
             arma::Row<double> net = net_by_layers[current_layer];
             arma::Row<double> sj = activation[current_layer].f(net);
-            arma::Row<double> net_wj = current_layer == 0 ? X : activation[current_layer-1].f(net_by_layers[current_layer - 1]);
+            arma::Row<double> net_wj = current_layer == 0 ? X : activation[current_layer - 1].f(net_by_layers[current_layer - 1]);
 
             // cout<<"current_layer: "<<current_layer<<endl;
 
@@ -167,8 +224,18 @@ public:
                 //(dL/dsj)*(dsj/dNet) = dL/dNet
 
                 // arma::Row<double> dsj_Netj = (sj) % (1 - sj);
-                arma::Row<double> dsj_Netj = activation[current_layer].df(sj,net);
-                ro = (sj - Y) % dsj_Netj; //error
+                arma::Row<double> dsj_Netj = activation[current_layer].df(sj, net);
+
+                if (floss.name == "cross_entropy" && activation[current_layer].name == "soft_max")
+                {
+                    // cout<<"a" ;
+                    ro = (sj - Y);
+                }
+                else
+                    ro = floss.dloss(sj, Y) % dsj_Netj;
+
+                // ro = (sj - Y) % dsj_Netj; //error
+
                 // cout<<"ro: "<<size(ro)<<endl;
                 //(dNet/dwj)*(dL/dNet)
                 w_derivates.push_front(net_wj.t() * ro);
@@ -182,7 +249,7 @@ public:
                 // cout<<"dNet(h+1)/dsj: "<<size(net_next_h_sj)<<endl;
                 // cout<<"ro(h+1) = (dL/dNet(H+1)): "<< size(ro.t())<<endl;
                 // arma::Row<double> dsj_Netj = (sj) % (1 - sj);
-                arma::Row<double> dsj_Netj = activation[current_layer].df(sj,net);
+                arma::Row<double> dsj_Netj = activation[current_layer].df(sj, net);
                 // cout<<"dsj/dNetj: "<< size(dsj_Netj.t())<<endl;
                 ro = ((net_next_h_sj * (ro.t())).t() % (dsj_Netj));
                 // cout<<"ro: "<<size(ro)<<endl;
@@ -202,26 +269,41 @@ public:
         }
     }
 
-    void train(arma::Mat<double> &X_train, arma::Mat<double> &Y_train, int epoch)
+    pair<vector<double>, vector<double>> train(arma::Mat<double> &X_train, arma::Mat<double> &Y_train, int epoch, int print = 1, arma::Mat<double> X_validation = {}, arma::Mat<double> Y_validation = {})
     {
+        vector<double> loss_training;
+        vector<double> loss_validation;
 
         for (int i = 0; i < epoch; ++i)
         {
-            double actual_error = 0;
+            double actual_error_train = 0;
+            double actual_error_val = 0;
             for (int row = 0; row < size(X_train).n_rows; ++row)
             {
                 arma::Row<double> actual_X = X_train.row(row);
                 arma::Row<double> actual_Y = Y_train.row(row);
 
                 backpropagate(actual_X, actual_Y);
-                actual_error += Error(actual_X, actual_Y);
+                actual_error_train += floss.loss(pred(actual_X), actual_Y);
             }
 
-            if (i % 100 == 0)
+            for (int row = 0; row < size(X_validation).n_rows; ++row)
             {
-                cout << "El error para la epoca " << i << " es " << actual_error << endl;
+                arma::Row<double> actual_X = X_validation.row(row);
+                arma::Row<double> actual_Y = Y_validation.row(row);
+
+                actual_error_val += floss.loss(pred(actual_X), actual_Y);
+            }
+
+            loss_training.push_back(actual_error_train);
+            loss_validation.push_back(actual_error_val);
+
+            if (i % 100 == 0 && print)
+            {
+                cout << "El error para la epoca " << i << " es " << actual_error_train << endl;
             }
         }
+        return {loss_training, loss_validation};
     }
 
     arma::Row<double> multi_pred(arma::Mat<double> &X)
@@ -269,7 +351,7 @@ arma::Mat<double> read_data(string name)
 
     file.open(name, ios::in);
 
-    cout << file.is_open() << endl;
+    // cout << file.is_open() << endl;
 
     getline(file, buffer, '\n');
 
@@ -289,74 +371,4 @@ arma::Mat<double> read_data(string name)
     }
 
     return matrix;
-}
-
-int main(int argc, char **argv)
-{
-    arma::arma_rng::set_seed(0);
-
-    vector<int> capas = {5, 2};
-    vector<activation_function> activation = {Red::sigmoid(), Red::sigmoid()};
-
-    Red rn(4, capas,activation ,Red::sigmoid(), 3, 0.1);
-
-    // rn.print_red();
-
-    // arma::Row<double> input(1);
-    // arma::Col<double> test({2,3,4,5});
-    // arma::Col<double> test2({3,7,13,6});
-
-    // cout<<rn.activationRelu(test);
-
-    // cout<<  test % test2;
-
-    // arma::Mat<double> test;
-
-    // vector<double> v1 = {1,2,34};
-    // vector<double> v2 = {1,30,34};
-
-    auto X = (read_data("./datasets/iris.csv"));
-    auto Y = (read_data("./datasets/iris_pred.csv"));
-    // arma::Row<double> Y = (read_data("./datasets/iris_pred.csv")).t();
-
-    // cout << arma::size(X) << endl;
-    // cout << arma::size(Y) << endl;
-
-    // rn.print_red();
-
-    rn.train(X, Y, 5000);
-
-    // arma::Row<double> test = {1,1,1,12,31,-12315512,154,-1251351551,0,-12315,-015315};
-
-    // cout<<(test >= arma::Row<double>(size(test),arma::fill::zeros) );
-    // cout<<(Red::relu()).f(test);
-    // cout<<(Red::relu()).df(arma::Row<double>{},test);
-
-    // cout<<endl;
-    // for (int i = 0; i < size(X).n_rows; ++i)
-    // {
-    //     arma::Row<double> r = X.row(i);
-    //     arma::Row<double> r_real = Y.row(i);
-    //     cout << rn.pred(r) << " " << r_real << endl;
-    // }
-
-    // auto row2 = arma::conv_to<arma::rowvec>::from(v1);
-    // auto row3 = arma::conv_to<arma::rowvec>::from(v2);
-
-    // test = arma::join_cols(row2,row3);
-    // test = row2;
-
-    // cout<<arma::Mat<double>{}.is_empty();
-
-    // cout<<test(2)<<endl;
-
-    // auto s = arma::size(nada);
-
-    // input(0) = 2;
-
-    // cout<<input;
-
-    // cout<< rn.pred(input);
-
-    return 0;
 }
