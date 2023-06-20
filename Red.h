@@ -326,7 +326,25 @@ public:
     }
 };
 
-vector<double> readLine(string line)
+
+vector<string> readLineStrings(string line)
+{
+
+    stringstream ss(line);
+    string item;
+    vector<string> result;
+
+    // separar la string line por ','
+    while (getline(ss, item, ','))
+    {
+        item.erase(remove(item.begin(), item.end(), ' '), item.end());
+        result.push_back(item);
+    }
+
+    return result;
+}
+
+vector<double> readLineNumbers(string line)
 {
 
     stringstream ss(line);
@@ -345,6 +363,7 @@ vector<double> readLine(string line)
 
 arma::Mat<double> read_data(string name)
 {
+    // cout<<name<<endl;
     fstream file;
     string buffer;
     arma::Mat<double> matrix;
@@ -358,7 +377,7 @@ arma::Mat<double> read_data(string name)
     while (getline(file, buffer, '\n'))
     {
 
-        arma::Row<double> actual_data(readLine(buffer));
+        arma::Row<double> actual_data(readLineNumbers(buffer));
 
         if (matrix.is_empty())
         {

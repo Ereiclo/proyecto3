@@ -27,7 +27,7 @@ int main(int argc, char **argv)
     // vector<double> v2 = {1,30,34};
 
     auto X = (read_data("./datasets/iris.csv"));
-    auto Y = (read_data("./datasets/iris_pred.csv"));
+    auto Y = (read_data("./datasets/iris_clases.csv"));
     // arma::Row<double> Y = (read_data("./datasets/iris_pred.csv")).t();
 
     // cout << arma::size(X) << endl;
