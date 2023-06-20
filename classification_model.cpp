@@ -25,6 +25,7 @@ loss_function decide_loss(string name)
 
 int main(int argc, char **argv)
 {
+    
     arma::arma_rng::set_seed(0);
     int input_size;
     vector<int> capas;
@@ -104,19 +105,21 @@ int main(int argc, char **argv)
 
         cout << "El input size es " << input_size << endl;
 
-        cout << "El valor para cada capa es\n";
+        cout << "El valor para cada capa es: ";
         for (auto &c_value : capas)
         {
-            cout << c_value << endl;
+            cout << c_value << " ";
         }
+        cout<<endl;
 
         cout << "El valor para la capa final es: " << capa_final << endl;
 
-        cout << "El valor de la activation para cada capa es\n";
+        cout << "El valor de la activation para cada capa es: ";
         for (auto &f_activation : activation)
         {
-            cout << f_activation.name << endl;
+            cout << f_activation.name << " ";
         }
+        cout<<endl;
 
         cout << "El valor para la activation final es: " << activation_final.name << endl;
 
@@ -142,15 +145,24 @@ int main(int argc, char **argv)
     auto result = rn.train(X_train, Y_train, epoch, print, X_test, Y_test);
 
 
-    for(auto&error : result.first) cout<<error<<" ";
+    for(int i = 0; i < result.first.size();++i) {
+        auto error = result.first[i];
+        cout<<error<<(i == (result.first.size() -1 ) ? "" : " ");
+    }
     cout<<endl;
 
-    for(auto&error: result.second) cout<<error<<" ";
+    for(int i = 0; i < result.second.size();++i) {
+        auto error = result.second[i];
+
+        cout<<error<<(i == (result.second.size() -1 ) ? "" : " ");
+    }
+    cout<<endl;
 
 
     for(int i = 0; i < size(X_test).n_rows; ++i){
         arma::Row<double> r = X_test.row(i);
-        cout<<rn.pred(r)<<" ";
+
+        cout<<rn.pred(r)<<(i == (size(X_test).n_rows - 1) ? "" : " ");
     }
 
     return 0;

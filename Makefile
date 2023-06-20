@@ -4,7 +4,7 @@ library_development:
 
 
 classification:
-	g++ classification_model.cpp -o exe -std=c++11 -larmadillo -g
+	g++ classification_model.cpp -o exe -O3 -std=c++11 -larmadillo -g
 
 run: classification
 	./exe
