@@ -296,7 +296,8 @@ public:
             }
 
             loss_training.push_back(actual_error_train);
-            loss_validation.push_back(actual_error_val);
+            if(size(X_validation).n_rows)
+                loss_validation.push_back(actual_error_val);
 
             if (i % 100 == 0 && print)
             {
@@ -363,7 +364,9 @@ vector<double> readLineNumbers(string line)
 
 arma::Mat<double> read_data(string name)
 {
+
     // cout<<name<<endl;
+    if(name == "") return {};
     fstream file;
     string buffer;
     arma::Mat<double> matrix;

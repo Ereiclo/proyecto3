@@ -8,18 +8,20 @@ activation_function decide_activation(string name)
         return Red::relu();
     else if (name == "tanh")
         return Red::tanh();
-    else if(name == "soft_max")
+    else if (name == "soft_max")
         return Red::soft_max();
     return activation_function{};
 }
 
-loss_function decide_loss(string name){
-    if(name == "mse") return Red::mse_loss();
-    else if(name == "cross_entropy") return Red::cross_entropy_loss();
+loss_function decide_loss(string name)
+{
+    if (name == "mse")
+        return Red::mse_loss();
+    else if (name == "cross_entropy")
+        return Red::cross_entropy_loss();
 
     return loss_function{};
 }
-
 
 int main(int argc, char **argv)
 {
@@ -29,10 +31,11 @@ int main(int argc, char **argv)
     int capa_final;
     vector<activation_function> activation;
     activation_function activation_final;
-    string training_X,training_Y;
-    string test_X,test_Y;
+    string training_X_name, training_Y_name;
+    string test_X_name, test_Y_name;
     loss_function ls;
     double alpha;
+    int print = 1;
     int epoch;
 
     for (int i = 1; i < argc; ++i)
@@ -45,7 +48,7 @@ int main(int argc, char **argv)
         getline(ss, param_name, ':');
         getline(ss, value);
 
-        if (param_name == "input_size" || param_name == "capas" || param_name == "capa_final" || param_name == "epoch" || param_name == "alpha")
+        if (param_name == "input_size" || param_name == "capas" || param_name == "capa_final" || param_name == "epoch" || param_name == "alpha" || param_name == "print")
         {
             vector<double> numbers = readLineNumbers(value);
             if (param_name == "input_size")
@@ -54,12 +57,14 @@ int main(int argc, char **argv)
                 capas = vector<int>(numbers.begin(), numbers.end());
             else if (param_name == "capa_final")
                 capa_final = numbers[0];
-            else if(param_name == "alpha"){
+            else if (param_name == "alpha")
+            {
                 alpha = numbers[0];
-                cout<<"a:"<<endl;
             }
-            else if(param_name == "epoch")
+            else if (param_name == "epoch")
                 epoch = numbers[0];
+            else if (param_name == "print")
+                print = numbers[0];
         }
         else
         {
@@ -70,56 +75,83 @@ int main(int argc, char **argv)
                 {
                     activation.push_back(decide_activation(act));
                 }
-            else if (param_name == "activation_final") activation_final = decide_activation(strings[0]);
-            else if (param_name == "loss") ls = decide_loss(strings[0]);
-            else if(param_name == "training_data") {
-                training_X = strings[0];
-                training_Y = strings[1];
+            else if (param_name == "activation_final")
+                activation_final = decide_activation(strings[0]);
+            else if (param_name == "loss")
+                ls = decide_loss(strings[0]);
+            else if (param_name == "training_data")
+            {
+                training_X_name = strings[0];
+                training_Y_name = strings[1];
             }
-            else if(param_name == "validation_data"){
-                test_X = strings[0];
-                test_Y = strings[1];
+            else if (param_name == "validation_data")
+            {
+                test_X_name = strings[0];
+                test_Y_name = strings[1];
             }
         }
 
         // cout<<param_name<<" "<<value<<endl;
     }
+    auto X_train = (read_data(training_X_name));
+    auto Y_train = (read_data(training_Y_name));
 
+    auto X_test = (read_data(test_X_name));
+    auto Y_test = (read_data(test_Y_name));
 
-    cout<<"El input size es "<<input_size<<endl;
+    if (print)
+    {
 
-    cout<<"El valor para cada capa es\n";
-    for(auto& c_value : capas){
-        cout<<c_value<<endl; 
+        cout << "El input size es " << input_size << endl;
+
+        cout << "El valor para cada capa es\n";
+        for (auto &c_value : capas)
+        {
+            cout << c_value << endl;
+        }
+
+        cout << "El valor para la capa final es: " << capa_final << endl;
+
+        cout << "El valor de la activation para cada capa es\n";
+        for (auto &f_activation : activation)
+        {
+            cout << f_activation.name << endl;
+        }
+
+        cout << "El valor para la activation final es: " << activation_final.name << endl;
+
+        cout << "El valor de la loss function es: " << ls.name << endl;
+
+        cout << "El nombre del archivo de train X es " << training_X_name << endl;
+        cout << "El nombre del archivo de train Y es " << training_Y_name << endl;
+
+        cout << "El nombre del archivo de test X es " << test_X_name << endl;
+        cout << "El nombre del archivo de test Y es " << test_Y_name << endl;
+
+        cout << "Epoch: " << epoch << " alpha: " << alpha << endl;
+
+        cout << "Train data size: " << arma::size(X_train) << "\nTrain class size: "
+             << arma::size(Y_train) << endl;
+
+        cout << "Test data size: " << arma::size(X_test) << "\nTest class size: "
+             << arma::size(Y_test) << endl;
     }
 
-    cout<<"El valor para la capa final es: "<<capa_final<<endl;
+    Red rn(input_size, capas, capa_final, activation, activation_final, ls, alpha);
 
-    cout<<"El valor de la activation para cada capa es\n";
-    for(auto&f_activation: activation){
-        cout<<f_activation.name<<endl;
+    auto result = rn.train(X_train, Y_train, epoch, print, X_test, Y_test);
+
+
+    for(auto&error : result.first) cout<<error<<" ";
+    cout<<endl;
+
+    for(auto&error: result.second) cout<<error<<" ";
+
+
+    for(int i = 0; i < size(X_test).n_rows; ++i){
+        arma::Row<double> r = X_test.row(i);
+        cout<<rn.pred(r)<<" ";
     }
-
-    cout<<"El valor para la activation final es: "<<activation_final.name<<endl;
-
-    cout<<"El valor de la loss function es: "<<ls.name<<endl;
-
-
-    cout<<"El nombre del archivo de train X es "<<training_X<<endl;
-    cout<<"El nombre del archivo de train Y es "<<training_Y<<endl;
-
-    auto X = (read_data(training_X));
-    auto Y = (read_data(training_Y));
-
-
-    cout<<"Epoch: "<<epoch<<" alpha: "<<alpha<<endl;
-
-    cout<<arma::size(X)<<" "<<arma::size(Y);
-
-
-    Red rn(input_size,capas,capa_final,activation,activation_final,ls,alpha);
-
-    rn.train(X,Y,epoch);
 
     return 0;
 }
