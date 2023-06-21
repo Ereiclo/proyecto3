@@ -58,17 +58,36 @@ def save_results(name,y_pred,error_val,error_train,cm):
     np.save(name + '_cm',cm)
     np.save(name + '_error_val',error_val)
     np.save(name + '_error_train',error_train)
+
+    plt.plot([i for i in range(len(error_train))],error_train)
+    plt.plot([i for i in range(len(error_val))],error_val)
+    plt.savefig(name + '_error_fig')
+
+
+def run_tests():
+    activation_function = ['sigmoid']
+    error = 'cross_entropy'
+
+ 
     
-
-
-test_file = './datasets/y_test.csv'
+test_file = './datasets/sound_class_test.csv'
 
 y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 
 y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
-          ['./datasets/x_train.csv','./datasets/y_train.csv'],
-          validation_data=['./datasets/x_test.csv',test_file],
+          ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv'],
+          validation_data=['./datasets/sound_data_test.csv',test_file],
           print_=0)
+
+
+# test_file = './datasets/y_test.csv'
+
+# y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
+
+# y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
+#           ['./datasets/x_train.csv','./datasets/y_train.csv'],
+#           validation_data=['./datasets/x_test.csv',test_file],
+#           print_=0)
 
 
 
@@ -96,13 +115,13 @@ y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_
 # print(y.argmax(axis=1))
 # print(len(y))
 # print(len(y_pred))
-accuracy = accuracy_score(y,y_pred)
-precision = precision_score(y,y_pred,average=None)
-recall_score = recall_score(y,y_pred,average=None)
-f1 = f1_score(y,y_pred,average=None)
+accuracy = balanced_accuracy_score(y,y_pred)
+precision = precision_score(y,y_pred,average='weighted')
+recall_score = recall_score(y,y_pred,average='weighted')
+f1 = f1_score(y,y_pred,average='weighted')
 # print(accuracy)
 
-# print(accuracy,precision,recall_score,f1)
+print(accuracy,precision,recall_score,f1)
 print(confusion_matrix(y,y_pred))
 
 

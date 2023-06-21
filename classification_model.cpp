@@ -26,7 +26,7 @@ loss_function decide_loss(string name)
 int main(int argc, char **argv)
 {
     
-    arma::arma_rng::set_seed(0);
+    arma::arma_rng::set_seed(42);
     int input_size;
     vector<int> capas;
     int capa_final;
