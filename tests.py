@@ -25,7 +25,7 @@ def run_model(input_size, capas, capa_final, activation, activation_final, loss,
                             'loss:' + loss, 'training_data:' + ','.join(training_data), 'epoch:' + str(epoch), 'alpha:' + str(alpha), 'print:' + str(print_),'validation_data:' + ','.join(validation_data)]
                 
             
-    # print(' '.join(args))
+    print(' '.join(args))
     out = subprocess.check_output(args)
     # print(out.decode())
 
@@ -35,9 +35,10 @@ def run_model(input_size, capas, capa_final, activation, activation_final, loss,
     error_val = [cast_to_float(elem) for elem in error_val.split(' ')]
     pred = [cast_to_float(elem) for elem in pred.split(' ')]
 
-    # print(pred)
+    print(len(pred))
 
-    # print(error_val)
+    print(error_train)
+    print(error_val)
     # print(pred)
 
     # print(error_train)
@@ -60,21 +61,49 @@ def save_results(name,y_pred,error_val,error_train,cm):
     
 
 
+test_file = './datasets/y_test.csv'
 
-y = pd.read_csv('./datasets/iris_class_test.csv').to_numpy().argmax(axis=1)
+y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 
-y_pred,error_train,error_val = run_model(4,[5,2],3,['relu','relu'],'sigmoid','mse',1000,0.1,
-          ['./datasets/iris_data_train.csv','./datasets/iris_class_train.csv'],
-          validation_data=['./datasets/iris_data_test.csv','./datasets/iris_class_test.csv'],
+y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
+          ['./datasets/x_train.csv','./datasets/y_train.csv'],
+          validation_data=['./datasets/x_test.csv',test_file],
           print_=0)
 
+
+
+
+# y_pred,error_train,error_val = run_model(128,[10],24,['sigmoid'],'sigmoid','mse',200,0.001,
+#           ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv'],
+#           validation_data=['./datasets/sound_data_test.csv',test_file],
+#           print_=0)
+
+# y_pred,error_train,error_val = run_model(4,[20,20,20],3,['relu','relu','relu'],'sigmoid','mse',1000,0.01,
+#           ['./datasets/iris_data_train.csv','./datasets/iris_class_train.csv'],
+#           validation_data=['./datasets/iris_data_test.csv',test_file],
+#           print_=0)
+
+# y_pred,error_train,error_val = run_model(4,[20,20],3,['sigmoid','sigmoid'],'soft_max','cross_entropy',100,0.1,
+#           ['./datasets/iris.csv','./datasets/iris_clases.csv'],
+#           validation_data=['./datasets/iris.csv','./datasets/iris_clases.csv'],
+#           print_=0)
+
+
+
+
+
+# print(y_pred)
 # print(y.argmax(axis=1))
+# print(len(y))
+# print(len(y_pred))
 accuracy = accuracy_score(y,y_pred)
 precision = precision_score(y,y_pred,average=None)
 recall_score = recall_score(y,y_pred,average=None)
 f1 = f1_score(y,y_pred,average=None)
+# print(accuracy)
 
-print(accuracy,precision,recall_score,f1)
+# print(accuracy,precision,recall_score,f1)
+print(confusion_matrix(y,y_pred))
 
 
 

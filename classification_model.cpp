@@ -164,6 +164,7 @@ int main(int argc, char **argv)
         
 
         cout<<arma::index_max(rn.pred(r))<<(i == (size(X_test).n_rows - 1) ? "" : " ");
+        // cout<<(rn.pred(r))<<endl;
     }
 
     return 0;
