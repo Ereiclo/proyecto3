@@ -79,6 +79,14 @@ y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_
           validation_data=['./datasets/sound_data_test.csv',test_file],
           print_=0)
 
+accuracy = balanced_accuracy_score(y,y_pred)
+precision = precision_score(y,y_pred,average='weighted')
+recall_score = recall_score(y,y_pred,average='weighted')
+f1 = f1_score(y,y_pred,average='weighted')
+
+print(accuracy,precision,recall_score,f1)
+print(confusion_matrix(y,y_pred))
+
 
 # test_file = './datasets/y_test.csv'
 
@@ -115,14 +123,7 @@ y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_
 # print(y.argmax(axis=1))
 # print(len(y))
 # print(len(y_pred))
-accuracy = balanced_accuracy_score(y,y_pred)
-precision = precision_score(y,y_pred,average='weighted')
-recall_score = recall_score(y,y_pred,average='weighted')
-f1 = f1_score(y,y_pred,average='weighted')
-# print(accuracy)
 
-print(accuracy,precision,recall_score,f1)
-print(confusion_matrix(y,y_pred))
 
 
 
