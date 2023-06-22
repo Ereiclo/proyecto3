@@ -1,4 +1,6 @@
 import matplotlib.pyplot as plt
+import os
+import pandas as pd
 import mpl_toolkits.mplot3d  # 
 from sklearn import datasets
 from sklearn.metrics import confusion_matrix,f1_score,accuracy_score,recall_score,precision_score,balanced_accuracy_score
@@ -35,10 +37,10 @@ def run_model(input_size, capas, capa_final, activation, activation_final, loss,
     error_val = [cast_to_float(elem) for elem in error_val.split(' ')]
     pred = [cast_to_float(elem) for elem in pred.split(' ')]
 
-    print(len(pred))
+    # print(len(pred))
 
-    print(error_train)
-    print(error_val)
+    # print(error_train)
+    # print(error_val)
     # print(pred)
 
     # print(error_train)
@@ -51,83 +53,128 @@ def run_model(input_size, capas, capa_final, activation, activation_final, loss,
     return pred,error_train,error_val
 
 
-def save_results(name,y_pred,error_val,error_train,cm):
+def save_results(y_pred,error_val,error_train,cm,path, name = ''):
 
 
-    np.save(name + '_pred',y_pred)
-    np.save(name + '_cm',cm)
-    np.save(name + '_error_val',error_val)
-    np.save(name + '_error_train',error_train)
+    np.save(path + name + 'pred',y_pred)
+    np.save(path + name + 'cm',cm)
+    np.save(path + name + 'error_val',error_val)
+    np.save(path + name + 'error_train',error_train)
 
     plt.plot([i for i in range(len(error_train))],error_train)
     plt.plot([i for i in range(len(error_val))],error_val)
-    plt.savefig(name + '_error_fig')
+    plt.savefig(path + name + 'error_fig')
+    plt.clf()
+
+
+    confusion_matrix_file = open(path + name + 'confusion_matrix.txt','w')
+    confusion_matrix_file.write(str(cm))
+
 
 
 def run_tests():
-    activation_function = ['sigmoid']
+    activation_function = ['sigmoid','tanh','relu']
     error = 'cross_entropy'
+    base_path = './tests/'
+    final_activation = 'soft_max'
+    alpha = [0.0001,0.001,0.01,0.1,0.15]
+    capas_up = [50,100,200]
+    capas_down = [200,100,50]
+    input_size = 128
+    epochs = 200 
+    output_size = 24
+    max_capas = 3
+    training_data = ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv']
+    test_file = './datasets/sound_class_test.csv'
+    validation_data=['./datasets/sound_data_test.csv',test_file]
+    y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 
- 
+    total = len(activation_function)*(max_capas-1)*2*len(alpha) +  len(activation_function)*len(alpha) - 1
+    # total = len(activation_function)*(max_capas-1)*2*len(alpha) +  len(activation_function)*len(alpha)
+    print(total)
+
+
+    results_dataframe = pd.DataFrame(columns=['activation_name','capa_1','capa_2','capa_3','alpha','accuracy','precision','recall_score','f1'])
+    i = 0
+
+    for activation in activation_function:
+        for capas in range(max_capas):
+
+            activation_reps = [activation for _ in range(capas+1)]
+            cps = [capas_up[:capas+1],capas_down[:capas+1]] if capas > 0 else [capas_up[:1]]
+            for cp in cps:
+                for alp in alpha:
+
+                    print(f'Test {i} de {total}:')
+
+
+                    i += 1
+
+                    y_pred,error_train,error_val = run_model(input_size,cp,output_size,activation_reps,final_activation,error,
+                          epochs,alp,training_data,validation_data)
+
+                    dir_name = f'{activation}_{"_".join([(str(cp[j]) if j < len(cp) else "") for j in range(max_capas) ])}_{alp}/'
+                    # print(dir_name)
+
+
+                    accuracy = balanced_accuracy_score(y,y_pred)
+                    precision = precision_score(y,y_pred,average='weighted')
+                    recall_score_ = recall_score(y,y_pred,average='weighted')
+                    f1 = f1_score(y,y_pred,average='weighted')
+
+                    # csv_entry = f'{activation},{",".join([(str(cp[j]) if j < len(cp) else "") for j in range(max_capas) ])},{alp},{accuracy},{precision},{recall_score_},{f1}'
+                    # print(csv_entry.split(','))
+
+                    new_row = pd.DataFrame({'activation_name':activation,'capa_1': cp[0],
+                                  'capa_2': cp[1] if 1 < len(cp) else '',
+                                  'capa_3': cp[2] if 2 < len(cp) else '','alpha':alp,'accuracy':accuracy,'precision':precision,
+                                  'recall_score':recall_score_,'f1':f1},index=[0])
+
+                    results_dataframe = pd.concat([results_dataframe,new_row])
+
+                    if not os.path.exists(base_path + dir_name):
+                        os.mkdir(base_path + dir_name)
+
+                    save_results(y_pred,error_val,error_train,confusion_matrix(y,y_pred),base_path + dir_name)
+
+
+                    
+                    
+
+
+
+
+                    # print(accuracy,precision,recall_score,f1)
+                    # print(confusion_matrix(y,y_pred))
+
     
-test_file = './datasets/sound_class_test.csv'
+    results_dataframe.to_csv(base_path + 'results.csv',index=False)
+ 
+run_tests()
+# a = pd.DataFrame(columns=['activation_name','capa_1','capa_2','capa_3','alpha','accuracy','precision','recall_score','f1'])
 
-y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
-
-y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
-          ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv'],
-          validation_data=['./datasets/sound_data_test.csv',test_file],
-          print_=0)
-
-accuracy = balanced_accuracy_score(y,y_pred)
-precision = precision_score(y,y_pred,average='weighted')
-recall_score = recall_score(y,y_pred,average='weighted')
-f1 = f1_score(y,y_pred,average='weighted')
-
-print(accuracy,precision,recall_score,f1)
-print(confusion_matrix(y,y_pred))
+# new_row = pd.DataFrame({'activation_name':5,'capa_1':'','capa_2':'',
+#                         'capa_3':'','alpha':50,'accuracy':5,'precision':53,
+#                         'recall_score':55,'f1':55},index=[0])
+# print(pd.concat([a,new_row,new_row]))
 
 
-# test_file = './datasets/y_test.csv'
+# test_file = './datasets/sound_class_test.csv'
 
 # y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 
 # y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
-#           ['./datasets/x_train.csv','./datasets/y_train.csv'],
-#           validation_data=['./datasets/x_test.csv',test_file],
-#           print_=0)
-
-
-
-
-# y_pred,error_train,error_val = run_model(128,[10],24,['sigmoid'],'sigmoid','mse',200,0.001,
 #           ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv'],
 #           validation_data=['./datasets/sound_data_test.csv',test_file],
 #           print_=0)
 
-# y_pred,error_train,error_val = run_model(4,[20,20,20],3,['relu','relu','relu'],'sigmoid','mse',1000,0.01,
-#           ['./datasets/iris_data_train.csv','./datasets/iris_class_train.csv'],
-#           validation_data=['./datasets/iris_data_test.csv',test_file],
-#           print_=0)
+# accuracy = balanced_accuracy_score(y,y_pred)
+# precision = precision_score(y,y_pred,average='weighted')
+# recall_score = recall_score(y,y_pred,average='weighted')
+# f1 = f1_score(y,y_pred,average='weighted')
 
-# y_pred,error_train,error_val = run_model(4,[20,20],3,['sigmoid','sigmoid'],'soft_max','cross_entropy',100,0.1,
-#           ['./datasets/iris.csv','./datasets/iris_clases.csv'],
-#           validation_data=['./datasets/iris.csv','./datasets/iris_clases.csv'],
-#           print_=0)
+# print(accuracy,precision,recall_score,f1)
+# print(confusion_matrix(y,y_pred))
 
 
-
-
-
-# print(y_pred)
-# print(y.argmax(axis=1))
-# print(len(y))
-# print(len(y_pred))
-
-
-
-
-# run_model(4,[5,2],3,['relu','relu'],'sigmoid','mse',1000,0.1,
-#           ['./datasets/iris.csv','./datasets/iris_clases.csv'],
-#           print_=1)
 
