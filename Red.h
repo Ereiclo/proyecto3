@@ -357,6 +357,8 @@ public:
         return {loss_training, loss_validation};
     }
 
+
+
     arma::Row<double> multi_pred(arma::Mat<double> &X)
     {
         arma::Row<double> actual = X;
@@ -386,6 +388,17 @@ public:
 
         }
         
+    }
+
+
+    void load_red(vector<string> wlist,vector<string> blist){
+
+        for(int i= 0; i < w.size();++i){
+            w[i].load(wlist[i]);
+            bias[i].load(blist[i]);
+        }
+
+
     }
 };
 

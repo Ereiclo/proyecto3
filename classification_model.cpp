@@ -29,6 +29,8 @@ int main(int argc, char **argv)
     arma::arma_rng::set_seed(42);
     int input_size;
     vector<int> capas;
+    vector<string> blist;
+    vector<string> wlist;
     int capa_final;
     vector<activation_function> activation;
     activation_function activation_final;
@@ -37,6 +39,7 @@ int main(int argc, char **argv)
     string test_X_name, test_Y_name;
     loss_function ls;
     double alpha;
+    int loading = 0;
     int print = 1;
     int epoch;
 
@@ -52,7 +55,7 @@ int main(int argc, char **argv)
 
         if (param_name == "input_size" || param_name == "capas" 
             || param_name == "capa_final" || param_name == "epoch" 
-            || param_name == "alpha" || param_name == "print")
+            || param_name == "alpha" || param_name == "print" || param_name == "loading")
         {
             vector<double> numbers = readLineNumbers(value);
             if (param_name == "input_size")
@@ -69,6 +72,8 @@ int main(int argc, char **argv)
                 epoch = numbers[0];
             else if (param_name == "print")
                 print = numbers[0];
+            else if(param_name == "loading");
+                loading = numbers[0];
         }
         else
         {
@@ -94,6 +99,14 @@ int main(int argc, char **argv)
                 test_Y_name = strings[1];
             }else if(param_name == "base_dir"){
                 base_dir = strings[0];
+            }else if(param_name == "blist"){
+
+                blist = strings;
+
+            }else if(param_name == "wlist"){
+
+                wlist = strings;
+
             }
         }
 
@@ -147,27 +160,36 @@ int main(int argc, char **argv)
 
     Red rn(input_size, capas, capa_final, activation, activation_final, ls, alpha);
 
-    auto result = rn.train(X_train, Y_train, epoch, print, X_test, Y_test);
+    pair<vector<double>, vector<double>> result; 
 
 
-    for(int i = 0; i < result.first.size();++i) {
-        auto error = result.first[i];
-        cout<<error<<(i == (result.first.size() -1 ) ? "" : " ");
-    }
+    
+    if(!loading)
+        result = rn.train(X_train, Y_train, epoch, print, X_test, Y_test);
+    else 
+        rn.load_red(wlist,blist);
+    
+
+
+    if(!loading)
+        for(int i = 0; i < result.first.size();++i) {
+            auto error = result.first[i];
+            cout<<error<<(i == (result.first.size() -1 ) ? "" : " ");
+        }
     cout<<endl;
 
-    for(int i = 0; i < result.second.size();++i) {
-        auto error = result.second[i];
+    if(!loading)
+        for(int i = 0; i < result.second.size();++i) {
+            auto error = result.second[i];
 
-        cout<<error<<(i == (result.second.size() -1 ) ? "" : " ");
-    }
+            cout<<error<<(i == (result.second.size() -1 ) ? "" : " ");
+        }
     cout<<endl;
 
 
     for(int i = 0; i < size(X_test).n_rows; ++i){
         arma::Row<double> r = X_test.row(i);
         
-
         cout<<arma::index_max(rn.pred(r))<<(i == (size(X_test).n_rows - 1) ? "" : " ");
         // cout<<(rn.pred(r))<<endl;
     }
