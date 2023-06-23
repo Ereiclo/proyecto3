@@ -17,14 +17,14 @@ def cast_to_float(elem):
     return float(elem) if elem != '' else 0
 
 
-def run_model(input_size, capas, capa_final, activation, activation_final, loss, epoch, alpha, training_data, validation_data='', compile_=0, print_=0):
+def run_model(input_size, capas, capa_final, activation, activation_final, loss, epoch, alpha, training_data, validation_data='', compile_=0, print_=0,base_dir=''):
     if compile_: 
         subprocess.check_output(['make', 'classification'])
 
 
     # out = subprocess.check_output(['./exe'])
     args = ['./exe', 'input_size:' + str(input_size), 'capas:' + ','.join([str(elem) for elem in capas]), 'capa_final:'+str(capa_final), 'activation:' + ','.join(activation), 'activation_final:' + activation_final,
-                            'loss:' + loss, 'training_data:' + ','.join(training_data), 'epoch:' + str(epoch), 'alpha:' + str(alpha), 'print:' + str(print_),'validation_data:' + ','.join(validation_data)]
+                            'loss:' + loss, 'training_data:' + ','.join(training_data), 'epoch:' + str(epoch), 'alpha:' + str(alpha), 'print:' + str(print_),'validation_data:' + ','.join(validation_data),'base_dir:' + base_dir]
                 
             
     print(' '.join(args))
@@ -110,10 +110,16 @@ def run_tests():
 
                     i += 1
 
-                    y_pred,error_train,error_val = run_model(input_size,cp,output_size,activation_reps,final_activation,error,
-                          epochs,alp,training_data,validation_data)
 
                     dir_name = f'{activation}_{"_".join([(str(cp[j]) if j < len(cp) else "") for j in range(max_capas) ])}_{alp}/'
+
+                    if not os.path.exists(base_path + dir_name):
+                        os.mkdir(base_path + dir_name)
+
+                    y_pred,error_train,error_val = run_model(input_size,cp,output_size,activation_reps,final_activation,error,
+                          epochs,alp,training_data,validation_data,base_dir=base_path+dir_name)
+
+
                     # print(dir_name)
 
 
@@ -132,8 +138,7 @@ def run_tests():
 
                     results_dataframe = pd.concat([results_dataframe,new_row])
 
-                    if not os.path.exists(base_path + dir_name):
-                        os.mkdir(base_path + dir_name)
+
 
                     save_results(y_pred,error_val,error_train,confusion_matrix(y,y_pred),base_path + dir_name)
 

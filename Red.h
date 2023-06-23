@@ -375,6 +375,18 @@ public:
 
         return actual;
     }
+
+    void save_red(string base_dir){
+        
+        for(int i = 0; i < w.size();++i){
+
+            w[i].save(base_dir + "w_capa_" + to_string(i) + ".csv",arma::csv_ascii);
+            w[i].save(base_dir + "b_capa_" + to_string(i) + ".csv",arma::csv_ascii);
+
+
+        }
+        
+    }
 };
 
 

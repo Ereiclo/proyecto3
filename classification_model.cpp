@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     int capa_final;
     vector<activation_function> activation;
     activation_function activation_final;
+    string base_dir;
     string training_X_name, training_Y_name;
     string test_X_name, test_Y_name;
     loss_function ls;
@@ -49,7 +50,9 @@ int main(int argc, char **argv)
         getline(ss, param_name, ':');
         getline(ss, value);
 
-        if (param_name == "input_size" || param_name == "capas" || param_name == "capa_final" || param_name == "epoch" || param_name == "alpha" || param_name == "print")
+        if (param_name == "input_size" || param_name == "capas" 
+            || param_name == "capa_final" || param_name == "epoch" 
+            || param_name == "alpha" || param_name == "print")
         {
             vector<double> numbers = readLineNumbers(value);
             if (param_name == "input_size")
@@ -89,6 +92,8 @@ int main(int argc, char **argv)
             {
                 test_X_name = strings[0];
                 test_Y_name = strings[1];
+            }else if(param_name == "base_dir"){
+                base_dir = strings[0];
             }
         }
 
@@ -165,6 +170,10 @@ int main(int argc, char **argv)
 
         cout<<arma::index_max(rn.pred(r))<<(i == (size(X_test).n_rows - 1) ? "" : " ");
         // cout<<(rn.pred(r))<<endl;
+    }
+
+    if(base_dir != ""){
+        rn.save_red(base_dir);
     }
 
     return 0;
