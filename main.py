@@ -21,7 +21,7 @@ def cast_to_float(elem):
 def run_saved_model(wlist,blist,input_size, capas, capa_final, activation,
                     activation_final,validation_data,y):
 
-    # subprocess.run(['make', 'classification'])
+    subprocess.run(['make', 'classification'])
 
 
     args = ['./exe', 'input_size:' + str(input_size), 'capas:' + ','.join([str(elem) for elem in capas]), 'capa_final:'+str(capa_final), 'activation:' + ','.join(activation), 'activation_final:' + activation_final,
@@ -30,13 +30,25 @@ def run_saved_model(wlist,blist,input_size, capas, capa_final, activation,
 
             
     print(' '.join(args))
-    # out = subprocess.check_output(args)
-    # print(out.decode())
+    out = subprocess.check_output(args)
+    # print(out.decode().split('\n'))
 
-    # _,_,pred =  out.decode().split('\n')
+    _,_,pred =  out.decode().split('\n')
+
+    pred = [cast_to_float(elem) for elem in pred.split(' ')]
+
+    accuracy = balanced_accuracy_score(y,pred)
+    precision = precision_score(y,pred,average='weighted')
+    recall_score_ = recall_score(y,pred,average='weighted')
+    f1 = f1_score(y,pred,average='weighted')
 
 
-    # print(confusion_matrix(y,pred))
+    print(confusion_matrix(y,pred))
+
+    print(f'Accuracy: {accuracy}')
+    print(f'Precision: {precision}')
+    print(f'Recall score: {recall_score_}')
+    print(f'F1 score: {f1}')
 
 
 

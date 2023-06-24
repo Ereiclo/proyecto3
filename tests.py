@@ -107,8 +107,24 @@ def run_tests():
 
                     print(f'Test {i} de {total}:')
 
-
                     i += 1
+                    actual = i-1
+                    if(actual < 68):
+                        continue
+                    
+
+                    # if(actual == 68):
+                        # return None
+
+                    # [19,26]
+                    # [26,33]
+                    # [33,40]
+                    # [40,47]
+                    # [47,54]
+                    # [54,61]
+                    # [61,68]
+                    # [68,75]
+
 
 
                     dir_name = f'{activation}_{"_".join([(str(cp[j]) if j < len(cp) else "") for j in range(max_capas) ])}_{alp}/'
@@ -155,7 +171,10 @@ def run_tests():
     
     results_dataframe.to_csv(base_path + 'results.csv',index=False)
  
-# run_tests()
+
+
+
+run_tests()
 # a = pd.DataFrame(columns=['activation_name','capa_1','capa_2','capa_3','alpha','accuracy','precision','recall_score','f1'])
 
 # new_row = pd.DataFrame({'activation_name':5,'capa_1':'','capa_2':'',

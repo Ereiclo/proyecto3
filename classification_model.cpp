@@ -209,11 +209,13 @@ int main(int argc, char **argv)
     cout<<endl;
 
 
+    // cout<<size(X_test)<<endl;
     for(int i = 0; i < size(X_test).n_rows; ++i){
         arma::Row<double> r = X_test.row(i);
         
         cout<<arma::index_max(rn.pred(r))<<(i == (size(X_test).n_rows - 1) ? "" : " ");
         // cout<<(rn.pred(r))<<endl;
+        // cout<<i<<endl;
     }
 
     if(base_dir != ""){
