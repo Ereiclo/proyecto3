@@ -8,6 +8,7 @@
 
 using namespace std;
 
+//definicion de una funcion de activación
 struct activation_function
 {
     function<arma::Row<double>(arma::Row<double>)> f;
@@ -15,6 +16,7 @@ struct activation_function
     string name;
 };
 
+//definicion de una funcion de loss
 struct loss_function
 {
 
@@ -26,9 +28,13 @@ struct loss_function
 class Red
 {
 
+    //matrices para cada capa
     vector<arma::Mat<double>> w;
+    //bias para cada capa
     vector<arma::Row<double>> bias;
+    //activacion para cada capa
     vector<activation_function> activation;
+    //funcion de loss
     loss_function floss;
     double alpha = 0.15;
 
@@ -45,6 +51,7 @@ public:
         w.push_back((arma::Mat<double> (input_n, n_por_capas[0], arma::fill::randu) - 0.5)*0.6);
         bias.push_back(arma::Row<double>(n_por_capas[0], arma::fill::zeros));
 
+        //por cada capa crear la matriz correspondiente
         for (int i = 1; i < n_por_capas.size(); ++i)
         {
             int n = n_por_capas[i - 1];
@@ -64,6 +71,7 @@ public:
     void print_red()
     {
 
+        //imprimir matrices de pesos 
         for (int i = 0; i < w.size(); ++i)
         {
             auto m_capa_actual = w[i];
@@ -74,6 +82,9 @@ public:
         }
     }
 
+
+
+    //definiciones staticas para cada funcion de activacion
     static activation_function sigmoid()
     {
         auto f = [](arma::Row<double> net) -> arma::Row<double>
@@ -133,6 +144,8 @@ public:
         return activation_function{f, df, "soft_max"};
     }
 
+    //definiciones estáticas para cada funcionde perdida
+
     static loss_function mse_loss()
     {
 
@@ -168,17 +181,16 @@ public:
     }
 
 
-    double Error(arma::Row<double> &X, arma::Row<double> &Y)
-    {
-        return arma::sum(arma::square(pred(X) - Y) / 2);
-    }
+    
 
+    //backprogation
     void backpropagate(arma::Row<double> &X, arma::Row<double> &Y,int thrw)
     {
 
         arma::Row<double> actual = X;
         vector<arma::Row<double>> net_by_layers;
 
+        //guardar el net para cada capa
         for (int i = 0; i < w.size(); ++i)
         {
             arma::Row<double> net = actual * w[i] + bias[i];
@@ -190,13 +202,15 @@ public:
 
         deque<arma::Mat<double>> w_derivates;
         deque<arma::Row<double>> bias_derivates;
-        arma::Row<double> ro;
+        arma::Row<double> ro; //dL/dNetj
 
         for (int current_layer = net_by_layers.size() - 1; current_layer >= 0; --current_layer)
         {
             arma::Row<double> net = net_by_layers[current_layer];
-            arma::Row<double> sj = activation[current_layer].f(net);
+            arma::Row<double> sj = activation[current_layer].f(net); //f(net)
+            //dNet/dwj (es siempre el input de la capa anterior o sj^(h-1))
             arma::Row<double> net_wj = current_layer == 0 ? X : activation[current_layer - 1].f(net_by_layers[current_layer - 1]);
+
 
 
 
@@ -204,6 +218,7 @@ public:
             {
 
                 
+                //dsj/dNetj
                 arma::Row<double> dsj_Netj = activation[current_layer].df(net);
 
                 if (floss.name == "cross_entropy" && activation[current_layer].name == "soft_max")
@@ -212,37 +227,27 @@ public:
                 }
                 else
                     ro = floss.dloss(sj, Y) % dsj_Netj;
+                    //dL/dNetj
                 
-                if(thrw){
-                    cout<<"net"<<endl;
-                    cout<<net<<endl;
-                    cout<<"dsj_netj"<<endl;
-                    cout<<dsj_Netj<<endl;
-                    cout<<"ro----"<<endl;
-                    cout<<ro<<endl;
-                    cout<<"sj----"<<endl;
-                    cout<<sj<<endl;
-                    cout<<"Y----"<<endl;
-                    cout<<Y<<endl;
-                    cout<<"dloss----"<<endl;
-                    cout<<floss.dloss(sj,Y)<<endl;
-                }
 
-
-
+                                        //dL/dNetj*dNetj/dwj
                 w_derivates.push_front(net_wj.t() * ro);
+                //ro = dL/dNetj = dL/dNetj = dL/dNetj * 1 = dL/dNetj * dNetj/db
                 bias_derivates.push_front(ro);
             }
             else
             {
+                //dNeth+1/dsj
                 arma::Mat<double> net_next_h_sj = w[current_layer + 1];
 
+                //dsj/dNetj
                 arma::Row<double> dsj_Netj = activation[current_layer].df(net);
-                arma::Row<double> ro_act = (net_next_h_sj * (ro.t())).t();
-                ro = ro_act % (dsj_Netj);
+                arma::Row<double> temp = (net_next_h_sj * (ro.t())).t();//(dNeth+1/dsj^h)*(dL/dNet^h+1)
+                ro = temp % (dsj_Netj); //(dL/dsj^h)*(dsj^h/dNetj)
 
 
 
+                                        //dL/dNetj*dNetj/dwj
                 w_derivates.push_front(net_wj.t() * ro);
                 bias_derivates.push_front(ro);
             }
@@ -250,6 +255,7 @@ public:
         }
 
 
+        //actualizar las derivadas en cada capa
         for (int i = 0; i < w.size(); ++i)
         {
             w[i] = w[i] - alpha * w_derivates[i];
@@ -261,12 +267,14 @@ public:
     {
         vector<double> loss_training;
         vector<double> loss_validation;
+        //orden en el que se va a acceder el dataset de train
         vector<int> indexes(size(X_train).n_rows);
 
         std::iota(indexes.begin(),indexes.end(),0);
 
         for (int i = 0; i < epoch; ++i)
         {
+            //desordenar el acceso al dataset de train
             random_shuffle(indexes.begin(),indexes.end());
             double actual_error_train = 0;
             double actual_error_val = 0;
@@ -278,6 +286,7 @@ public:
                 arma::Row<double> actual_Y = Y_train.row(row);
 
 
+                //guardar el error actual
                 actual_error_train += floss.loss(pred(actual_X), actual_Y);
                 backpropagate(actual_X, actual_Y,0);
             }
@@ -287,6 +296,7 @@ public:
                 arma::Row<double> actual_X = X_validation.row(row);
                 arma::Row<double> actual_Y = Y_validation.row(row);
 
+                //guardar el error actual de validation
                 actual_error_val += floss.loss(pred(actual_X), actual_Y);
             }
 
@@ -304,15 +314,12 @@ public:
 
 
 
-    arma::Row<double> multi_pred(arma::Mat<double> &X)
-    {
-        arma::Row<double> actual = X;
+    
 
-        return actual;
-    }
-
+    //predicir el punto actual
     arma::Row<double> pred(arma::Row<double> &X)
     {
+        
         arma::Row<double> actual = X;
 
         for (int i = 0; i < w.size(); ++i)
@@ -358,6 +365,8 @@ public:
 };
 
 
+
+//utilidades para leer csv y guardar 
 
 vector<string> readLineStrings(string line)
 {
