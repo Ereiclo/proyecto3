@@ -30,7 +30,6 @@ class Red
     vector<arma::Row<double>> bias;
     vector<activation_function> activation;
     loss_function floss;
-    // vector<arma::Mat<double>> f;
     double alpha = 0.15;
 
 public:
@@ -39,11 +38,10 @@ public:
         double alpha = 0.15) : activation{activation}, floss{loss}, alpha{alpha}
     {
 
-        // if(activation_final.name == "soft_max" && loss.name != "cross_entropy")
-        // throw std::invalid_argument("Soft max solo se puede usar con cross entropy");
+        if(activation_final.name == "soft_max" && loss.name != "cross_entropy")
+            throw std::invalid_argument("Soft max solo se puede usar con cross entropy");
 
         this->activation.push_back(activation_final);
-        // this->capas[0](3,3);
         w.push_back((arma::Mat<double> (input_n, n_por_capas[0], arma::fill::randu) - 0.5)*0.6);
         bias.push_back(arma::Row<double>(n_por_capas[0], arma::fill::zeros));
 
@@ -54,12 +52,6 @@ public:
             w.push_back( (arma::Mat<double>(n, m, arma::fill::randu) - 0.5)*0.6);
             bias.push_back(arma::Row<double>(m, arma::fill::zeros));
             
-
-            // for(int ip = 0; ip < n;++ip){
-            //     for(int jp = 0; jp  < m ;++jp){
-            //         w.back()(ip,jp) = 0.1;
-            //     }
-            // }
 
 
 
@@ -86,14 +78,12 @@ public:
     {
         auto f = [](arma::Row<double> net) -> arma::Row<double>
         {
-            // cout<<"aaa"<<endl;
             return 1.0 / (1.0 + arma::exp(-net));
         };
         auto df = [f](arma::Row<double> net) -> arma::Row<double>
         {
             return f(net) % (1.0 - f(net));
         };
-        // activation_function sigmoid
 
         return activation_function{f, df, "sigmoid"};
     }
@@ -122,13 +112,9 @@ public:
         {
             arma::Row<arma::uword> result = (net >= arma::Row<double>(size(net), arma::fill::zeros));
 
-            // cout<<(test >= arma::Row<double>(size(test),arma::fill::zeros) );
-            // cout<<result;
 
             return arma::conv_to<arma::Row<double>>::from(result);
-            // return {};
         };
-        // activation_function sigmoid
 
         return activation_function{f, df, "relu"};
     }
@@ -143,7 +129,6 @@ public:
         {
             return {};
         };
-        // activation_function sigmoid
 
         return activation_function{f, df, "soft_max"};
     }
@@ -182,11 +167,6 @@ public:
         return loss_function{loss, dloss, "cross_entropy"};
     }
 
-    // arma::Row<double> activation(arma::Row<double> data){
-
-    //     return activationSigmoid(data);
-
-    // }
 
     double Error(arma::Row<double> &X, arma::Row<double> &Y)
     {
@@ -197,24 +177,16 @@ public:
     {
 
         arma::Row<double> actual = X;
-        // vector<arma::Row<double>> sj_by_layers;
         vector<arma::Row<double>> net_by_layers;
 
-        // cout<<"El tamanio de activation es: "<<activation.size()<<endl;
-        // cout<<"El tamanio de w es: "<<w.size()<<endl;
-        // cout<<activation.size()<<endl;
         for (int i = 0; i < w.size(); ++i)
         {
             arma::Row<double> net = actual * w[i] + bias[i];
             actual = activation[i].f(net);
 
-            // cout<<i<<endl;
             net_by_layers.push_back(net);
-            // sj_by_layers.push_back(actual);
         }
 
-        // cout<<arma::size(X)<<" "<<arma::size(Y)<<endl;
-        // cout<<sj_by_layers.back()<<endl;
 
         deque<arma::Mat<double>> w_derivates;
         deque<arma::Row<double>> bias_derivates;
@@ -224,29 +196,21 @@ public:
         {
             arma::Row<double> net = net_by_layers[current_layer];
             arma::Row<double> sj = activation[current_layer].f(net);
-            //input data
             arma::Row<double> net_wj = current_layer == 0 ? X : activation[current_layer - 1].f(net_by_layers[current_layer - 1]);
 
-            // cout<<"current_layer: "<<current_layer<<endl;
 
-            // cout<<"sj: "<<arma::size(sj)<<endl;
 
             if (current_layer == net_by_layers.size() - 1)
             {
-                //(dL/dsj)*(dsj/dNet) = dL/dNet
 
-                // arma::Row<double> dsj_Netj = (sj) % (1 - sj);
                 
-                //F'(input data @ w + b)
                 arma::Row<double> dsj_Netj = activation[current_layer].df(net);
 
                 if (floss.name == "cross_entropy" && activation[current_layer].name == "soft_max")
                 {
-                    // cout<<"a" ;
                     ro = (sj - Y);
                 }
                 else
-                    //dL/dsj
                     ro = floss.dloss(sj, Y) % dsj_Netj;
                 
                 if(thrw){
@@ -265,43 +229,29 @@ public:
                 }
 
 
-                // ro = (sj - Y) % dsj_Netj; //error
 
-                // cout<<"ro: "<<size(ro)<<endl;
-                //(dNet/dwj)*(dL/dNet)
                 w_derivates.push_front(net_wj.t() * ro);
-                // cout<<w_derivates.front().row(0);
-                // cout<<w.back().row(0);
-                // cout<<"ultima capa"<<endl;
-                // throw;
                 bias_derivates.push_front(ro);
-                // cout<<size(w_derivates.front())<<endl;
             }
             else
             {
                 arma::Mat<double> net_next_h_sj = w[current_layer + 1];
 
-                //F'(net)
                 arma::Row<double> dsj_Netj = activation[current_layer].df(net);
                 arma::Row<double> ro_act = (net_next_h_sj * (ro.t())).t();
                 ro = ro_act % (dsj_Netj);
 
-                // auto ro_act = ro % dsj_Netj;
-                // ro = ro_act * w[current_layer].t();
 
 
                 w_derivates.push_front(net_wj.t() * ro);
                 bias_derivates.push_front(ro);
             }
 
-            // cout<<endl;
         }
 
 
         for (int i = 0; i < w.size(); ++i)
         {
-            // cout<<"Derivadas capa "<<i<<endl;
-            // cout<<w_derivates[i]<<endl;
             w[i] = w[i] - alpha * w_derivates[i];
             bias[i] = bias[i] - alpha * bias_derivates[i];
         }
@@ -318,7 +268,6 @@ public:
         for (int i = 0; i < epoch; ++i)
         {
             random_shuffle(indexes.begin(),indexes.end());
-            // cout<<i<<endl;
             double actual_error_train = 0;
             double actual_error_val = 0;
             for (int r = 0; r < indexes.size(); ++r)
@@ -348,10 +297,6 @@ public:
             if (print)
             {
                 cout << "El error para la epoca " << i << " es " << actual_error_train << " " <<  actual_error_val << endl;
-                // cout<<"El tu mama despues: "<<endl;
-                // cout<< w[0] <<endl;
-                // cout<<"si: "<<endl;
-                // cout<< w.back()<<endl;
             }
         }
         return {loss_training, loss_validation};
@@ -394,7 +339,6 @@ public:
     void load_red(vector<string> wlist,vector<string> blist){
 
         for(int i= 0; i < w.size();++i){
-            // cout<<"Leyendo :"<< wlist[i]<<" "<<blist[i]<<endl;
             w[i].load(wlist[i]);
             bias[i].load(blist[i]);
         }
@@ -452,7 +396,6 @@ vector<double> readLineNumbers(string line)
 arma::Mat<double> read_data(string name)
 {
 
-    // cout<<name<<endl;
     if(name == "") return {};
     fstream file;
     string buffer;
@@ -460,7 +403,6 @@ arma::Mat<double> read_data(string name)
 
     file.open(name, ios::in);
 
-    // cout << file.is_open() << endl;
 
     getline(file, buffer, '\n');
 
