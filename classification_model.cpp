@@ -1,4 +1,5 @@
 #include "Red.h"
+//archivo que permite usar la librería como programa en terminal 
 
 activation_function decide_activation(string name)
 {
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
         getline(ss, param_name, ':');
         getline(ss, value);
 
+        //casos para cada parametro
         if (param_name == "input_size" || param_name == "capas" 
             || param_name == "capa_final" || param_name == "epoch" 
             || param_name == "alpha" || param_name == "print" || param_name == "loading")

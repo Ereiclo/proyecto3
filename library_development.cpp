@@ -1,5 +1,7 @@
 #include "Red.h"
 
+//archivo usado para probar la librería
+
 int main(int argc, char **argv)
 {
     arma::arma_rng::set_seed(0);

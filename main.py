@@ -14,6 +14,8 @@ import librosa
 import os
 import subprocess
 
+#archivo para visualizar el mejor resultado
+
 def cast_to_float(elem):
     return float(elem) if elem != '' else 0
 
@@ -43,6 +45,7 @@ def run_saved_model(wlist,blist,input_size, capas, capa_final, activation,
     f1 = f1_score(y,pred,average='weighted')
 
 
+    print('(Para mejor visualización no se decidió dejar la matriz en porcentajes)')
     print(confusion_matrix(y,pred))
 
     print(f'Accuracy: {accuracy}')
