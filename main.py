@@ -62,6 +62,13 @@ blist = ['./best_result/b_capa_0.csv','./best_result/b_capa_1.csv']
 test_file = './datasets/sound_class_test.csv'
 y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 validation_data=['./datasets/sound_data_test.csv',test_file]
+print('Capas usadas: 1')
+print('Neuronas por capa: [50]')
+print('Función de activación usada: sigmoid')
+print('Función de activación para la última capa usada: soft-max')
+print('Error usado: cross_entropy')
+print('Épocas usadas: 200')
+print('Alpha usado: 0.15')
 run_saved_model(wlist,blist,128,[50],24,['sigmoid'],'soft_max',validation_data,y)
 
 
