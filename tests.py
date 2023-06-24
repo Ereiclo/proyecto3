@@ -108,23 +108,6 @@ def run_tests():
                     print(f'Test {i} de {total}:')
 
                     i += 1
-                    actual = i-1
-                    if(actual < 68):
-                        continue
-                    
-
-                    # if(actual == 68):
-                        # return None
-
-                    # [19,26]
-                    # [26,33]
-                    # [33,40]
-                    # [40,47]
-                    # [47,54]
-                    # [54,61]
-                    # [61,68]
-                    # [68,75]
-
 
 
                     dir_name = f'{activation}_{"_".join([(str(cp[j]) if j < len(cp) else "") for j in range(max_capas) ])}_{alp}/'
@@ -174,31 +157,13 @@ def run_tests():
 
 
 
-run_tests()
-# a = pd.DataFrame(columns=['activation_name','capa_1','capa_2','capa_3','alpha','accuracy','precision','recall_score','f1'])
+# run_tests()
 
-# new_row = pd.DataFrame({'activation_name':5,'capa_1':'','capa_2':'',
-#                         'capa_3':'','alpha':50,'accuracy':5,'precision':53,
-#                         'recall_score':55,'f1':55},index=[0])
-# print(pd.concat([a,new_row,new_row]))
-
-
+# training_data = ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv']
 # test_file = './datasets/sound_class_test.csv'
-
+# validation_data=['./datasets/sound_data_test.csv',test_file]
 # y = pd.read_csv(test_file).to_numpy().argmax(axis=1)
 
-# y_pred,error_train,error_val = run_model(128,[50],24,['relu'],'soft_max','cross_entropy',50,0.01,
-#           ['./datasets/sound_data_train.csv','./datasets/sound_class_train.csv'],
-#           validation_data=['./datasets/sound_data_test.csv',test_file],
-#           print_=0)
-
-# accuracy = balanced_accuracy_score(y,y_pred)
-# precision = precision_score(y,y_pred,average='weighted')
-# recall_score = recall_score(y,y_pred,average='weighted')
-# f1 = f1_score(y,y_pred,average='weighted')
-
-# print(accuracy,precision,recall_score,f1)
-# print(confusion_matrix(y,y_pred))
 
 
-
+# run_model(128,[50],128,['sigmoid'],'soft_max','cross_entropy',200,0.15)
