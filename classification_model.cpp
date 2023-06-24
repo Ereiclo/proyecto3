@@ -72,8 +72,10 @@ int main(int argc, char **argv)
                 epoch = numbers[0];
             else if (param_name == "print")
                 print = numbers[0];
-            else if(param_name == "loading");
+            else if(param_name == "loading"){
                 loading = numbers[0];
+                // cout<<"a"<<endl;
+            }
         }
         else
         {
@@ -156,6 +158,21 @@ int main(int argc, char **argv)
 
         cout << "Test data size: " << arma::size(X_test) << "\nTest class size: "
              << arma::size(Y_test) << endl;
+        
+        cout << "wlist: "<<endl;
+
+        for(int i = 0; i < wlist.size();++i){
+            cout<<wlist[i]<<" ";
+        }
+        cout<<endl;       
+
+
+        cout << "blist: "<<endl;
+
+        for(int i = 0; i < blist.size();++i){
+            cout<<blist[i]<<" ";
+        }
+        cout<<endl;
     }
 
     Red rn(input_size, capas, capa_final, activation, activation_final, ls, alpha);
@@ -168,6 +185,11 @@ int main(int argc, char **argv)
         result = rn.train(X_train, Y_train, epoch, print, X_test, Y_test);
     else 
         rn.load_red(wlist,blist);
+    
+
+    if(print){
+        rn.show_red();
+    }
     
 
 

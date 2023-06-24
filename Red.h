@@ -383,7 +383,7 @@ public:
         for(int i = 0; i < w.size();++i){
 
             w[i].save(base_dir + "w_capa_" + to_string(i) + ".csv",arma::csv_ascii);
-            w[i].save(base_dir + "b_capa_" + to_string(i) + ".csv",arma::csv_ascii);
+            bias[i].save(base_dir + "b_capa_" + to_string(i) + ".csv",arma::csv_ascii);
 
 
         }
@@ -394,8 +394,19 @@ public:
     void load_red(vector<string> wlist,vector<string> blist){
 
         for(int i= 0; i < w.size();++i){
+            // cout<<"Leyendo :"<< wlist[i]<<" "<<blist[i]<<endl;
             w[i].load(wlist[i]);
             bias[i].load(blist[i]);
+        }
+
+
+    }
+
+    void show_red(){
+
+        for(int i= 0; i < w.size();++i){
+            cout<<size(w[i])<<endl;
+            cout<<size(bias[i])<<endl;
         }
 
 

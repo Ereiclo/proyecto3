@@ -155,7 +155,7 @@ def run_tests():
     
     results_dataframe.to_csv(base_path + 'results.csv',index=False)
  
-run_tests()
+# run_tests()
 # a = pd.DataFrame(columns=['activation_name','capa_1','capa_2','capa_3','alpha','accuracy','precision','recall_score','f1'])
 
 # new_row = pd.DataFrame({'activation_name':5,'capa_1':'','capa_2':'',
